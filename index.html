@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>El Muro de los Ecos | Fábulas Vintage</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- Playfair Display para encabezados clásicos, Lora para cuerpo editorial, y Reenie Beanie para simular caligrafía a mano en las notas -->
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Reenie+Beanie&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Librería QRCodeJS para renderizar dinámicamente el QR en un lienzo antiguo -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+    <style>
+        :root {
+            --bg-paper: #f0ebe1; /* Papel antiguo crema */
+            --bg-card: #fdfbf7;  /* Pergamino claro */
+            --bg-note-1: #faf0d9; /* Nota manuscrita sepia */
+            --bg-note-2: #f5f2eb; /* Nota manuscrita crema */
+            --bg-note-3: #eef2eb; /* Nota manuscrita oliva pálido */
+            --text-dark: #2b2721;
+            --text-muted: #6e6459;
+            --accent-gold: #c29b57;
+            --accent-gold-hover: #a88548;
+            --accent-green: #4a503f;
+            --border-color: #d4c8b8;
+            
+            --font-title: 'Playfair Display', serif;
+            --font-body: 'Lora', serif;
+            --font-hand: 'Reenie Beanie', cursive;
+            
+            --shadow-soft: 0 10px 30px rgba(43, 39, 33, 0.08);
+            --shadow-note: 2px 8px 15px rgba(43, 39, 33, 0.12);
+            --transition-smooth: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: var(--font-body);
+            background-color: var(--bg-paper);
+            color: var(--text-dark);
+            min-height: 100vh;
+            padding: 3rem 1.5rem;
+            background-image: radial-gradient(var(--border-color) 1px, transparent 1px);
+            background-size: 35px 35px;
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Marco decorativo perimetral simulando hoja de libro */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 15px; bottom: 15px; left: 15px; right: 15px;
+            border: 1px solid var(--accent-gold);
+            border-radius: 8px;
+            pointer-events: none;
+            z-index: 999;
+            opacity: 0.25;
+        }
+
+        .main-wrapper {
+            max-width: 1200px;
+            width: 100%;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            box-shadow: var(--shadow-soft);
+            padding: 4rem 3rem;
+            position: relative;
+            outline: 1px solid var(--accent-gold);
+            outline-offset: -12px;
+        }
+
+        /* Ornamentos clásicos en las esquinas principales */
+        .main-wrapper::before, .main-wrapper::after {
+            content: "❦";
+            position: absolute;
+            font-size: 2rem;
+            color: var(--accent-gold);
+            opacity: 0.4;
+            z-index: 10;
+        }
+        .main-wrapper::before { top: 18px; left: 24px; }
+        .main-wrapper::after { bottom: 18px; right: 24px; transform: rotate(180deg); }
+
+        .header-editorial {
+            text-align: center;
+            margin-bottom: 4rem;
+            border-bottom: 1px dashed var(--accent-gold);
+            padding-bottom: 2.5rem;
+            position: relative;
+        }
+
+        .kicker {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            color: var(--accent-gold);
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        .main-title {
+            font-family: var(--font-title);
+            font-size: 3.5rem;
+            font-style: italic;
+            color: var(--accent-green);
+            line-height: 1.1;
+            margin-bottom: 1rem;
+        }
+
+        .description {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            max-width: 700px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        /* Florón divisor */
+        .fleuron {
+            font-size: 1.2rem;
+            color: var(--accent-gold);
+            margin: 1.5rem 0 0 0;
+            display: block;
+        }
+
+        .mural-grid {
+            display: grid;
+            grid-template-columns: 1.1fr 1.9fr;
+            gap: 3.5rem;
+            align-items: start;
+        }
+
+        /* Escritorio del transcriptor (Formulario e indicadores) */
+        .desk-column {
+            display: flex;
+            flex-direction: column;
+            gap: 2.5rem;
+            position: sticky;
+            top: 2rem;
+        }
+
+        /* Paneles con relieve sutil */
+        .desk-panel {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            padding: 2.2rem 1.8rem;
+            border-radius: 4px;
+            box-shadow: inset 0 0 15px rgba(43, 39, 33, 0.02);
+            position: relative;
+        }
+
+        .panel-title {
+            font-family: var(--font-title);
+            font-size: 1.5rem;
+            color: var(--accent-green);
+            margin-bottom: 1.2rem;
+            border-left: 2px solid var(--accent-gold);
+            padding-left: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .vintage-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .input-group label {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .input-field {
+            font-family: var(--font-body);
+            background-color: rgba(240, 235, 225, 0.4);
+            border: 1px solid var(--border-color);
+            padding: 0.8rem 1rem;
+            color: var(--text-dark);
+            font-size: 1rem;
+            border-radius: 4px;
+            transition: var(--transition-smooth);
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: var(--accent-gold);
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(194, 155, 87, 0.15);
+        }
+
+        .select-field {
+            appearance: none;
+            background-image: url("data:image/svg+xml;utf8,<svg fill='%23c29b57' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            padding-right: 2.5rem;
+        }
+
+        .btn-wax-stamp {
+            background: linear-gradient(135deg, var(--accent-green) 0%, #2f3427 100%);
+            color: #fff;
+            border: 2px solid #2f3427;
+            padding: 1rem 2rem;
+            font-family: var(--font-title);
+            font-size: 1.15rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            letter-spacing: 1px;
+            box-shadow: 0 5px 15px rgba(74, 80, 63, 0.2);
+            position: relative;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+
+        .btn-wax-stamp::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 50%; height: 100%;
+            background: linear-gradient(to right, transparent, rgba(255,255,255,0.15), transparent);
+            transform: skewX(-25deg);
+            transition: 0.6s;
+        }
+
+        .btn-wax-stamp:hover::before { left: 150%; }
+
+        .btn-wax-stamp:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 25px rgba(194, 155, 87, 0.25);
+            color: var(--accent-gold);
+            border-color: var(--accent-gold);
+        }
+
+        .analytics-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+            margin-top: 0.5rem;
+        }
+
+        .metric-row {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        .metric-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            color: var(--text-dark);
+            font-weight: 500;
+        }
+
+        .metric-bar-bg {
+            background-color: rgba(240, 235, 225, 0.8);
+            height: 8px;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid rgba(212, 200, 184, 0.4);
+        }
+
+        .metric-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-gold) 0%, #dfbf88 100%);
+            border-radius: 10px;
+            width: 0%; /* Animado dinámicamente */
+            transition: width 1.2s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        /* Sintonía específica para la opción verde oliva */
+        .metric-row:nth-child(2) .metric-bar-fill {
+            background: linear-gradient(90deg, var(--accent-green) 0%, #869274 100%);
+        }
+
+        .qr-desk-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            border-top: 1px dashed var(--border-color);
+            padding-top: 1.8rem;
+            margin-top: 0.5rem;
+        }
+
+        .qr-frame {
+            background-color: #fff;
+            padding: 0.8rem;
+            border: 2px solid var(--accent-gold);
+            border-radius: 4px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+            position: relative;
+            flex-shrink: 0;
+            width: 110px;
+            height: 110px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .qr-frame::before {
+            content: '';
+            position: absolute;
+            top: -5px; bottom: -5px; left: -5px; right: -5px;
+            border: 1px solid var(--border-color);
+            pointer-events: none;
+        }
+
+        /* Elemento dinámico renderizado dentro del marco */
+        #qr-canvas {
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        .qr-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+        }
+
+        .qr-meta h4 {
+            font-family: var(--font-title);
+            font-size: 1.1rem;
+            color: var(--accent-green);
+        }
+
+        .qr-meta p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+
+        .mural-column {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .mural-board {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 2rem;
+            min-height: 400px;
+        }
+
+        /* Estilo de la tarjeta de nota vintage o "Post-it de pergamino" */
+        .note-card {
+            background-color: var(--bg-note-1);
+            border-radius: 2px;
+            padding: 1.8rem 1.5rem;
+            box-shadow: var(--shadow-note);
+            position: relative;
+            transform: rotate(var(--rotation, -1deg));
+            transition: var(--transition-smooth);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 220px;
+            border-bottom-right-radius: 20px 150px; /* Simula página enrollada al final */
+        }
+
+        /* Colores aleatorios predeterminados */
+        .note-card:nth-child(2n) { background-color: var(--bg-note-2); }
+        .note-card:nth-child(3n) { background-color: var(--bg-note-3); }
+
+        .note-card:hover {
+            transform: scale(1.04) rotate(0deg) translateY(-5px);
+            z-index: 50;
+            box-shadow: 0 15px 35px rgba(43, 39, 33, 0.2);
+        }
+
+        /* Chincheta o tachuela simuladora */
+        .note-card::before {
+            content: '';
+            width: 12px; height: 12px;
+            background-color: #b05c48; /* Color lacre/cobre antiguo */
+            border-radius: 50%;
+            position: absolute;
+            top: 10px; left: 50%;
+            transform: translateX(-50%);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.15), inset -2px -2px 4px rgba(0,0,0,0.4);
+            z-index: 5;
+        }
+
+        .note-content {
+            font-family: var(--font-hand);
+            font-size: 1.8rem;
+            color: #2b2721;
+            line-height: 1.1;
+            margin-top: 0.8rem;
+            margin-bottom: 1.5rem;
+            word-break: break-word;
+        }
+
+        .note-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px dashed rgba(110, 100, 89, 0.2);
+            padding-top: 0.8rem;
+        }
+
+        .note-author {
+            font-family: var(--font-title);
+            font-size: 0.95rem;
+            font-style: italic;
+            color: var(--accent-green);
+        }
+
+        .note-tag {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            background-color: rgba(255, 255, 255, 0.5);
+            padding: 0.2rem 0.5rem;
+            border-radius: 20px;
+            color: var(--text-muted);
+            border: 1px solid rgba(110, 100, 89, 0.15);
+        }
+
+        .featured-editorial {
+            margin-top: 1.5rem;
+            background-color: #fff;
+            border: 1px solid var(--accent-gold);
+            padding: 2rem;
+            border-radius: 4px;
+            position: relative;
+        }
+
+        .featured-editorial::before {
+            content: "\f10d"; /* Comilla de FontAwesome */
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900;
+            position: absolute;
+            top: -15px; left: 30px;
+            background-color: var(--bg-card);
+            padding: 0 10px;
+            color: var(--accent-gold);
+            font-size: 1.5rem;
+        }
+
+        .featured-quote {
+            font-family: var(--font-body);
+            font-style: italic;
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 1rem;
+        }
+
+        .featured-author {
+            font-family: var(--font-title);
+            font-size: 0.95rem;
+            text-align: right;
+            color: var(--accent-gold-hover);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Notificaciones tipo pergamino flotante (Reemplazo de alert) */
+        .vintage-toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background-color: var(--bg-card);
+            border: 2px solid var(--accent-gold);
+            padding: 1.2rem 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            border-radius: 4px;
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: var(--transition-smooth);
+            font-family: var(--font-title);
+            font-style: italic;
+        }
+
+        .vintage-toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast-icon {
+            font-size: 1.5rem;
+            color: var(--accent-green);
+        }
+
+        @media (max-width: 992px) {
+            .mural-grid { grid-template-columns: 1fr; gap: 4rem; }
+            .desk-column { position: static; }
+            .main-wrapper { padding: 3rem 1.5rem; }
+            .main-title { font-size: 2.8rem; }
+        }
+
+        @media (max-width: 600px) {
+            body { padding: 1.5rem 0.5rem; }
+            .main-title { font-size: 2.2rem; }
+            .description { font-size: 0.95rem; }
+            .qr-desk-wrapper { flex-direction: column; align-items: center; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="main-wrapper">
+        
+        <!-- CABECERA EDITORIAL -->
+        <header class="header-editorial">
+            <span class="kicker">Mesa de Diálogo Escolar</span>
+            <h1 class="main-title">El Muro de los Ecos</h1>
+            <p class="description">
+                ¿Qué nos enseñan hoy las fábulas del pasado? Comparte tu reflexión sobre la evolución de la moral de *La Cigarra y la Hormiga* y deja asentada tu perspectiva en nuestro pergamino colaborativo.
+            </p>
+            <span class="fleuron">❦</span>
+        </header>
+
+        <!-- SECCIÓN DE INTERACCIÓN INTERNA -->
+        <div class="mural-grid">
+            
+            <!-- COLUMNA IZQUIERDA: ESCRITORIO DEL TRANSCRIPTOR -->
+            <aside class="desk-column">
+                
+                <!-- PANEL: REGISTRO DE VOTO Y REFLEXIÓN -->
+                <div class="desk-panel">
+                    <h3 class="panel-title">
+                        <i class="fa-solid fa-pen-fancy"></i> Dejar un Eco
+                    </h3>
+                    
+                    <form id="eco-form" class="vintage-form">
+                        <div class="input-group">
+                            <label for="author-input">Firma (Tu Nombre o Pseudónimo)</label>
+                            <input type="text" id="author-input" class="input-field" placeholder="Ej. Lector de Esopo" required maxlength="25">
+                        </div>
+
+                        <div class="input-group">
+                            <label for="sentiment-select">Alineación con la Fábula</label>
+                            <select id="sentiment-select" class="input-field select-field" required>
+                                <option value="" disabled selected>Elige tu postura intelectual...</option>
+                                <option value="hormiga">Enfoque de la Hormiga (Trabajo y Previsión)</option>
+                                <option value="cigarra">Enfoque de la Cigarra (Disfrute y Arte)</option>
+                                <option value="sintesis">Enfoque de Síntesis (Equilibrio Moderno)</option>
+                            </select>
+                        </div>
+
+                        <div class="input-group">
+                            <label for="opinion-textarea">Reflexión manuscrita</label>
+                            <textarea id="opinion-textarea" class="input-field" placeholder="¿Qué opinas sobre esta fábula hoy? Escribe con tinta digital..." required maxlength="120" style="min-height: 110px; resize: none;"></textarea>
+                        </div>
+
+                        <button type="submit" class="btn-wax-stamp">
+                            <i class="fa-solid fa-stamp"></i> Sellar mi Reflexión
+                        </button>
+                    </form>
+                </div>
+
+                <!-- PANEL: MÉTRICAS Y TENDENCIAS -->
+                <div class="desk-panel">
+                    <h3 class="panel-title">
+                        <i class="fa-solid fa-chart-pie"></i> Sentido Común
+                    </h3>
+                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.2rem; font-style: italic;">
+                        Así se alinean los pensamientos de nuestros visitantes actuales:
+                    </p>
+                    
+                    <div class="analytics-container">
+                        <!-- Hormiga -->
+                        <div class="metric-row">
+                            <div class="metric-labels">
+                                <span>La Hormiga (Previsión)</span>
+                                <span id="pct-hormiga">0%</span>
+                            </div>
+                            <div class="metric-bar-bg">
+                                <div class="metric-bar-fill" id="bar-hormiga"></div>
+                            </div>
+                        </div>
+
+                        <!-- Cigarra -->
+                        <div class="metric-row">
+                            <div class="metric-labels">
+                                <span>La Cigarra (Presente/Arte)</span>
+                                <span id="pct-cigarra">0%</span>
+                            </div>
+                            <div class="metric-bar-bg">
+                                <div class="metric-bar-fill" id="bar-cigarra"></div>
+                            </div>
+                        </div>
+
+                        <!-- Síntesis -->
+                        <div class="metric-row">
+                            <div class="metric-labels">
+                                <span>La Síntesis (Equilibrio)</span>
+                                <span id="pct-sintesis">0%</span>
+                            </div>
+                            <div class="metric-bar-bg">
+                                <div class="metric-bar-fill" id="bar-sintesis"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SECCIÓN INTEGRADA PARA EL CÓDIGO QR -->
+                    <div class="qr-desk-wrapper">
+                        <div class="qr-frame">
+                            <div id="qr-container"></div>
+                        </div>
+                        <div class="qr-meta">
+                            <h4>Presentación Principal</h4>
+                            <p>Escanea este sello dorado para regresar a la Galería de Fábulas y la trivia.</p>
+                        </div>
+                    </div>
+                </div>
+
+            </aside>
+
+            <!-- COLUMNA DERECHA: EL MURO DE LOS ECOS -->
+            <main class="mural-column">
+                
+                <h2 style="font-family: var(--font-title); font-size: 1.8rem; color: var(--accent-green); display: flex; align-items: center; gap: 10px;">
+                    <i class="fa-solid fa-scroll"></i> Notas Recientes del Mural
+                </h2>
+                
+                <!-- Contenedor dinámico de Notas -->
+                <div class="mural-board" id="mural-board">
+                    <!-- Las tarjetas de opinión se renderizan con JavaScript -->
+                </div>
+
+                <!-- RESPUESTA O REFLEXIÓN DESTACADA (EDITORIAL) -->
+                <div class="featured-editorial">
+                    <p class="featured-quote">
+                        "La hormiga que niega la canción a la cigarra muere de frío espiritual en invierno; la cigarra que niega el trabajo a la hormiga muere de frío físico en otoño. La sabiduría real de nuestro tiempo radica en aprender a cantar mientras se recolecta el grano."
+                    </p>
+                    <p class="featured-author">
+                        — Reflexión de la Cátedra, Ecos de Papel
+                    </p>
+                </div>
+
+            </main>
+
+        </div>
+
+    </div>
+
+    <!-- NOTIFICACIÓN DE ÉXITO -->
+    <div class="vintage-toast" id="vintage-toast">
+        <i class="fa-solid fa-feather-pointed toast-icon"></i>
+        <span id="toast-text">Reflexión sellada en el pergamino.</span>
+    </div>
+
+    <script>
+        // --- BASE DE DATOS LOCAL INICIAL (Simulación de Notas del Mural) ---
+        const initialEchoes = [
+            {
+                author: "Marta G. (Docente)",
+                text: "Me encanta el enfoque moderno del dilema. Mis alumnos ahora ven a la cigarra como un artista necesario en el ecosistema escolar.",
+                alignment: "sintesis"
+            },
+            {
+                author: "Santiago Alvarezo",
+                text: "Sin el trabajo riguroso de la hormiga, ninguna cigarra podría tener un auditorio donde cantar. Esfuerzo primero.",
+                alignment: "hormiga"
+            },
+            {
+                author: "Sofía M.",
+                text: "Hoy en día el desgaste mental es enorme. Deberíamos aprender más de la cigarra y disfrutar un poco más del verano de nuestras vidas.",
+                alignment: "cigarra"
+            }
+        ];
+
+        // --- REFERENCIAS AL DOM ---
+        const form = document.getElementById('eco-form');
+        const authorInput = document.getElementById('author-input');
+        const sentimentSelect = document.getElementById('sentiment-select');
+        const opinionTextarea = document.getElementById('opinion-textarea');
+        const muralBoard = document.getElementById('mural-board');
+        const toast = document.getElementById('vintage-toast');
+
+        // --- SISTEMA DE QR DINÁMICO ---
+        // Enlace del portal de producción
+        const portalUrl = "https://cmertilus15-oss.github.io/puerta-de-entrada/index.html#";
+        
+        window.onload = function() {
+            // Inicializar el QR decorativo
+            new QRCode(document.getElementById("qr-container"), {
+                text: portalUrl,
+                width: 90,
+                height: 90,
+                colorDark: "#2b2721",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.M
+            });
+
+            // Pintar notas por primera vez
+            renderMural(initialEchoes);
+        };
+
+        // --- FUNCIONES DEL MURAL ---
+        
+        // Renderiza el tablero de notas y recalcula porcentajes
+        function renderMural(data) {
+            muralBoard.innerHTML = '';
+            
+            data.forEach((echo) => {
+                // Determinar el tag amigable según la alineación
+                let tagFriendly = "Síntesis";
+                if(echo.alignment === "hormiga") tagFriendly = "Hormiga";
+                if(echo.alignment === "cigarra") tagFriendly = "Cigarra";
+
+                // Crear un ángulo aleatorio para que parezcan notas colocadas a mano
+                const randomAngle = (Math.random() * 4 - 2).toFixed(1);
+
+                const noteHTML = `
+                    <article class="note-card" style="--rotation: ${randomAngle}deg; animation: fadeIn 0.6s ease forwards;">
+                        <p class="note-content">"${echo.text}"</p>
+                        <div class="note-footer">
+                            <span class="note-author">✒️ ${echo.author}</span>
+                            <span class="note-tag">${tagFriendly}</span>
+                        </div>
+                    </article>
+                `;
+                muralBoard.insertAdjacentHTML('beforeend', noteHTML);
+            });
+
+            calculateAnalytics(data);
+        }
+
+        // Calcula dinámicamente y anima los porcentajes en el widget de estadísticas
+        function calculateAnalytics(data) {
+            const total = data.length;
+            if (total === 0) return;
+
+            const counts = { hormiga: 0, cigarra: 0, sintesis: 0 };
+            
+            data.forEach(echo => {
+                if(counts[echo.alignment] !== undefined) {
+                    counts[echo.alignment]++;
+                }
+            });
+
+            // Actualizar porcentaje y barra para cada métrica
+            for (const key in counts) {
+                const pct = Math.round((counts[key] / total) * 100);
+                document.getElementById(`pct-${key}`).innerText = `${pct}%`;
+                document.getElementById(`bar-${key}`).style.width = `${pct}%`;
+            }
+        }
+
+        // --- CAPTURA DEL FORMULARIO ---
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const newEco = {
+                author: authorInput.value.trim(),
+                text: opinionTextarea.value.trim(),
+                alignment: sentimentSelect.value
+            };
+
+            // Añadir al principio del muro virtual
+            initialEchoes.unshift(newEco);
+
+            // Re-renderizar completo
+            renderMural(initialEchoes);
+
+            // Mostrar el toast vintage
+            showToast("Tu reflexión ha sido lacrada en el mural.");
+
+            // Limpiar campos del formulario
+            form.reset();
+        });
+
+        // Alerta elegante de época
+        function showToast(message) {
+            document.getElementById('toast-text').innerText = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3500);
+        }
+    </script>
+</body>
+</html>
